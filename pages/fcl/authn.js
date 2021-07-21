@@ -4,10 +4,11 @@ import css from "../../styles/base.module.css"
 import {safe} from "../../src/safe.js"
 import {Header} from "../../src/comps/header.comp.js"
 import {Err} from "../../src/comps/err.comp.js"
+import {WalletUtils} from "@onflow/fcl"
 
 const reply = (type, msg = {}) => e => {
   e.preventDefault()
-  window.parent.postMessage({...msg, type}, "*")
+  WalletUtils.sendMsgToFCL(type, msg)
 }
 
 async function createAccount() {
@@ -38,9 +39,9 @@ const entry = (scopes, key, value) => scopes.has(key) && [key, value]
 
 function authnResponse(data) {
   return e => {
-    reply("FCL:FRAME:RESPONSE", data)(e)
+    WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", data)
     /* backwards compatibility with fcl@0.0.67 */
-    reply("FCL::CHALLENGE::RESPONSE", data)(e)
+    WalletUtils.sendMsgToFCL("FCL::CHALLENGE::RESPONSE", data)
   }
 }
 
@@ -51,7 +52,6 @@ function chooseAccount(props, scopes) {
     return acc
   }, new Set([]))
 
-  // return reply("FCL:FRAME:RESPONSE", {
   return authnResponse({
     addr: address,
     services: [
@@ -214,8 +214,8 @@ export default function Authn() {
       setConfig(e.data)
     }
     window.addEventListener("message", callback)
-    window.parent.postMessage({type: "FCL:FRAME:READY"}, "*")
-
+    //window.opener.postMessage({type: "FCL:FRAME:READY"}, "*")
+    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
     return () => {
       window.removeEventListener("message", callback)
     }
@@ -230,7 +230,7 @@ export default function Authn() {
   return (
     <div className={css.root}>
       <Header
-        onClose={reply("FCL:FRAME:CLOSE")}
+        onClose={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
         subHeader="Choose Account"
         error={accounts.error}
       >

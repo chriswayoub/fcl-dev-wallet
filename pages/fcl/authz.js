@@ -3,9 +3,11 @@ import * as fcl from "@onflow/fcl"
 import swr from "swr"
 import css from "../../styles/base.module.css"
 import {Header} from "../../src/comps/header.comp.js"
+import {WalletUtils} from "@onflow/fcl"
 
 const reply = (type, msg = {}) => e => {
-  window.parent.postMessage({...msg, type}, "*")
+  e.preventDefault()
+  WalletUtils.sendMsgToFCL(type, msg)
 }
 
 const bool = d => {
@@ -31,7 +33,7 @@ export default function Authz() {
 
     window.addEventListener("message", callback)
 
-    reply("FCL:FRAME:READY")()
+    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
 
     return () => window.removeEventListener("message", callback)
   }, [])
@@ -44,7 +46,8 @@ export default function Authz() {
     })
       .then(d => d.json())
       .then(({signature}) => {
-        window.parent.postMessage(
+        WalletUtils.sendMsgToFCL(
+          "FCL:FRAME:MESSAGE",
           {
             jsonrpc: "2.0",
             id: id,
@@ -61,8 +64,7 @@ export default function Authz() {
                 signature: signature,
               },
             },
-          },
-          "*"
+          }
         )
       })
       .catch(d => console.error("FCL-DEV-WALLET FAILED TO SIGN", d))
@@ -71,7 +73,7 @@ export default function Authz() {
   return (
     <div className={css.root}>
       <Header
-        onClose={reply("FCL:FRAME:CLOSE")}
+        onClose={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
         subHeader="Authorize Transaction"
       />
       <table>
@@ -106,7 +108,7 @@ export default function Authz() {
         <tfoot>
           <tr>
             <td colSpan="2">
-              <button onClick={reply("FCL:FRAME:CLOSE")}>Decline</button>
+              <button onClick={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}>Decline</button>
             </td>
             <td colSpan="3">
               <button onClick={sign}>Approve</button>
