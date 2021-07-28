@@ -1,12 +1,8 @@
 import {useEffect, useState} from "react"
 import * as fcl from "@onflow/fcl"
-import swr from "swr"
 import css from "../../styles/base.module.css"
 import {Header} from "../../src/comps/header.comp.js"
-
-const reply = (type, msg = {}) => e => {
-  window.parent.postMessage({...msg, type}, "*")
-}
+import {WalletUtils} from "@onflow/fcl"
 
 export default function UserSign() {
   const [signable, setSignable] = useState(null)
@@ -22,7 +18,7 @@ export default function UserSign() {
 
     window.addEventListener("message", callback)
 
-    reply("FCL:FRAME:READY")()
+    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
 
     return () => window.removeEventListener("message", callback)
   }, [])
@@ -35,7 +31,7 @@ export default function UserSign() {
     })
       .then(d => d.json())
       .then(({addr, keyId, signature}) => {
-        reply("FCL:FRAME:RESPONSE", {
+        WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", {
           f_type: "PollingResponse",
           f_vsn: "1.0.0",
           status: "APPROVED",
@@ -43,28 +39,19 @@ export default function UserSign() {
           data: {
             f_type: "CompositeSignature",
             f_vsn: "1.0.0",
-            addr: fcl.withPrefix(addr),
+            addr: fcl.sansPrefix(addr),
             keyId: Number(keyId),
             signature: signature,
           },
-        })()
+        })
       })
       .catch(d => console.error("FCL-DEV-WALLET FAILED TO SIGN", d))
-  }
-
-  const declineSign = () => {
-    reply("FCL:FRAME:RESPONSE", {
-      f_type: "PollingResponse",
-      f_vsn: "1.0.0",
-      status: "DECLINED",
-      reason: null,
-    })()
   }
 
   return (
     <div className={css.root}>
       <Header
-        onClose={reply("FCL:FRAME:CLOSE")}
+        onClose={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
         subHeader="Sign message to prove you have access to this wallet."
       />
       <h4>This won’t cost you any Flow.</h4>
@@ -86,7 +73,11 @@ export default function UserSign() {
         <tfoot>
           <tr>
             <td colSpan="1">
-              <button onClick={declineSign}>Decline</button>
+              <button
+                onClick={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+              >
+                Decline
+              </button>
             </td>
             <td colSpan="1"></td>
             <td colSpan="1">

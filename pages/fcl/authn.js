@@ -3,13 +3,7 @@ import swr, {mutate} from "swr"
 import css from "../../styles/base.module.css"
 import {safe} from "../../src/safe.js"
 import {Header} from "../../src/comps/header.comp.js"
-import {Err} from "../../src/comps/err.comp.js"
 import {WalletUtils} from "@onflow/fcl"
-
-const reply = (type, msg = {}) => e => {
-  e.preventDefault()
-  WalletUtils.sendMsgToFCL(type, msg)
-}
 
 async function createAccount() {
   await fetch("/api/account/new", {
@@ -210,12 +204,12 @@ export default function Authn() {
   useEffect(() => {
     function callback(e) {
       if (typeof e.data !== "object") return
-      if (e.data.type !== "FCL:AUTHN:CONFIG") return
+      if (e.data.type !== "FCL:FRAME:READY:RESPONSE") return
       setConfig(e.data)
     }
     window.addEventListener("message", callback)
-    //window.opener.postMessage({type: "FCL:FRAME:READY"}, "*")
     WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
+
     return () => {
       window.removeEventListener("message", callback)
     }
@@ -223,7 +217,6 @@ export default function Authn() {
 
   if (isInit.data == null)
     return <div className={css.root}>... Null Data ...</div>
-  // if (config == null) return <div className={css.root}>... Null Config ...</div>
 
   const scopes = config?.services?.["OpenID.scopes"]?.trim()?.split(/\s+/) ?? []
 

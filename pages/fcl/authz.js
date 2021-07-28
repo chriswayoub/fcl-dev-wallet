@@ -1,14 +1,8 @@
 import {useEffect, useState} from "react"
 import * as fcl from "@onflow/fcl"
-import swr from "swr"
 import css from "../../styles/base.module.css"
 import {Header} from "../../src/comps/header.comp.js"
 import {WalletUtils} from "@onflow/fcl"
-
-const reply = (type, msg = {}) => e => {
-  e.preventDefault()
-  WalletUtils.sendMsgToFCL(type, msg)
-}
 
 const bool = d => {
   return d ? "Yes" : "No"
@@ -16,19 +10,13 @@ const bool = d => {
 
 export default function Authz() {
   const [signable, setSignable] = useState(null)
-  const [params, setParams] = useState(null)
-  const [id, setId] = useState(null)
 
   useEffect(() => {
     function callback({data}) {
       if (data == null) return
-      if (data.jsonrpc != "2.0") return
-      if (data.method != "fcl:sign") return
-      const [signable, params] = data.params
-      delete signable.interaction
-      setId(data.id)
-      setSignable(signable)
-      setParams(params)
+      if (data.type !== "FCL:FRAME:READY:RESPONSE") return
+      delete data.body.interaction
+      setSignable(data.body)
     }
 
     window.addEventListener("message", callback)
@@ -46,26 +34,19 @@ export default function Authz() {
     })
       .then(d => d.json())
       .then(({signature}) => {
-        WalletUtils.sendMsgToFCL(
-          "FCL:FRAME:MESSAGE",
-          {
-            jsonrpc: "2.0",
-            id: id,
-            result: {
-              f_type: "PollingResponse",
-              f_vsn: "1.0.0",
-              status: "APPROVED",
-              reason: null,
-              data: {
-                f_type: "CompositeSignature",
-                f_vsn: "1.0.0",
-                addr: fcl.sansPrefix(signable.addr),
-                keyId: Number(signable.keyId),
-                signature: signature,
-              },
-            },
-          }
-        )
+        WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", {
+          f_type: "PollingResponse",
+          f_vsn: "1.0.0",
+          status: "APPROVED",
+          reason: null,
+          data: {
+            f_type: "CompositeSignature",
+            f_vsn: "1.0.0",
+            addr: fcl.sansPrefix(signable.addr),
+            keyId: Number(signable.keyId),
+            signature: signature,
+          },
+        })
       })
       .catch(d => console.error("FCL-DEV-WALLET FAILED TO SIGN", d))
   }
@@ -108,7 +89,11 @@ export default function Authz() {
         <tfoot>
           <tr>
             <td colSpan="2">
-              <button onClick={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}>Decline</button>
+              <button
+                onClick={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+              >
+                Decline
+              </button>
             </td>
             <td colSpan="3">
               <button onClick={sign}>Approve</button>
