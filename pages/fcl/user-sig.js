@@ -8,19 +8,17 @@ export default function UserSign() {
   const [signable, setSignable] = useState(null)
 
   useEffect(() => {
-    function callback({data}) {
-      if (data === null) return
-      if (typeof data !== "object") return
-      if (data.type === "FCL:FRAME:READY:RESPONSE") {
-        setSignable(data.body)
-      }
+    const callback = data => {
+      setSignable(data.body)
     }
 
-    window.addEventListener("message", callback)
+    const unsubscribe = WalletUtils.onFclMessage(
+      "FCL:VIEW:READY:RESPONSE",
+      callback
+    )
+    WalletUtils.sendMsgToFCL("FCL:VIEW:READY")
 
-    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
-
-    return () => window.removeEventListener("message", callback)
+    return () => unsubscribe()
   }, [])
 
   async function signUserMessage() {
@@ -31,7 +29,7 @@ export default function UserSign() {
     })
       .then(d => d.json())
       .then(({addr, keyId, signature}) => {
-        WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", {
+        WalletUtils.sendMsgToFCL("FCL:VIEW:RESPONSE", {
           f_type: "PollingResponse",
           f_vsn: "1.0.0",
           status: "APPROVED",
@@ -51,7 +49,7 @@ export default function UserSign() {
   return (
     <div className={css.root}>
       <Header
-        onClose={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+        onClose={() => WalletUtils.sendMsgToFCL("FCL:VIEW:CLOSE")}
         subHeader="Sign message to prove you have access to this wallet."
       />
       <h4>This won’t cost you any Flow.</h4>
@@ -74,7 +72,7 @@ export default function UserSign() {
           <tr>
             <td colSpan="1">
               <button
-                onClick={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+                onClick={() => WalletUtils.sendMsgToFCL("FCL:VIEW:CLOSE")}
               >
                 Decline
               </button>

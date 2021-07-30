@@ -12,18 +12,17 @@ export default function Authz() {
   const [signable, setSignable] = useState(null)
 
   useEffect(() => {
-    function callback({data}) {
-      if (data == null) return
-      if (data.type !== "FCL:FRAME:READY:RESPONSE") return
-      delete data.body.interaction
+    const callback = data => {
       setSignable(data.body)
     }
 
-    window.addEventListener("message", callback)
+    const unsubscribe = WalletUtils.onFclMessage(
+      "FCL:VIEW:READY:RESPONSE",
+      callback
+    )
+    WalletUtils.sendMsgToFCL("FCL:VIEW:READY")
 
-    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
-
-    return () => window.removeEventListener("message", callback)
+    return () => unsubscribe()
   }, [])
 
   async function sign() {
@@ -34,7 +33,7 @@ export default function Authz() {
     })
       .then(d => d.json())
       .then(({signature}) => {
-        WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", {
+        WalletUtils.sendMsgToFCL("FCL:VIEW:RESPONSE", {
           f_type: "PollingResponse",
           f_vsn: "1.0.0",
           status: "APPROVED",
@@ -54,7 +53,7 @@ export default function Authz() {
   return (
     <div className={css.root}>
       <Header
-        onClose={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+        onClose={() => WalletUtils.sendMsgToFCL("FCL:VIEW:CLOSE")}
         subHeader="Authorize Transaction"
       />
       <table>
@@ -90,7 +89,7 @@ export default function Authz() {
           <tr>
             <td colSpan="2">
               <button
-                onClick={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+                onClick={() => WalletUtils.sendMsgToFCL("FCL:VIEW:CLOSE")}
               >
                 Decline
               </button>

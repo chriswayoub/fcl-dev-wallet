@@ -33,7 +33,7 @@ const entry = (scopes, key, value) => scopes.has(key) && [key, value]
 
 function authnResponse(data) {
   return e => {
-    WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", data)
+    WalletUtils.sendMsgToFCL("FCL:VIEW:RESPONSE", data)
     /* backwards compatibility with fcl@0.0.67 */
     WalletUtils.sendMsgToFCL("FCL::CHALLENGE::RESPONSE", data)
   }
@@ -202,17 +202,17 @@ export default function Authn() {
   const [config, setConfig] = useState(null)
 
   useEffect(() => {
-    function callback(e) {
-      if (typeof e.data !== "object") return
-      if (e.data.type !== "FCL:FRAME:READY:RESPONSE") return
-      setConfig(e.data)
+    const callback = ({config}) => {
+      setConfig(config)
     }
-    window.addEventListener("message", callback)
-    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
 
-    return () => {
-      window.removeEventListener("message", callback)
-    }
+    const unsubscribe = WalletUtils.onFclMessage(
+      "FCL:VIEW:READY:RESPONSE",
+      callback
+    )
+    WalletUtils.sendMsgToFCL("FCL:VIEW:READY")
+
+    return () => unsubscribe()
   }, [])
 
   if (isInit.data == null)
@@ -223,7 +223,7 @@ export default function Authn() {
   return (
     <div className={css.root}>
       <Header
-        onClose={() => WalletUtils.sendMsgToFCL("FCL:FRAME:CLOSE")}
+        onClose={() => WalletUtils.sendMsgToFCL("FCL:VIEW:CLOSE")}
         subHeader="Choose Account"
         error={accounts.error}
       >
