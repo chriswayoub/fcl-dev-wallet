@@ -72,7 +72,7 @@ function chooseAccount(props, scopes) {
         type: "authz",
         uid: "fcl-dev-wallet#authz",
         endpoint: `${location.origin}/fcl/authz`,
-        method: "IFRAME/RPC",
+        method: "TAB/RPC",
         identity: {
           address: address,
           keyId: Number(keyId),
@@ -206,7 +206,7 @@ export default function Authn() {
       setConfig(config)
     }
 
-    const unsubscribe = WalletUtils.onFclMessage(
+    const unsubscribe = WalletUtils.onMessageFromFCL(
       "FCL:VIEW:READY:RESPONSE",
       callback
     )

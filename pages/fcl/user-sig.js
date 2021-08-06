@@ -12,7 +12,7 @@ export default function UserSign() {
       setSignable(data.body)
     }
 
-    const unsubscribe = WalletUtils.onFclMessage(
+    const unsubscribe = WalletUtils.onMessageFromFCL(
       "FCL:VIEW:READY:RESPONSE",
       callback
     )
