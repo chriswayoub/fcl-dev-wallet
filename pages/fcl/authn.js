@@ -34,8 +34,6 @@ const entry = (scopes, key, value) => scopes.has(key) && [key, value]
 function authnResponse(data) {
   return e => {
     WalletUtils.sendMsgToFCL("FCL:VIEW:RESPONSE", data)
-    /* backwards compatibility with fcl@0.0.67 */
-    WalletUtils.sendMsgToFCL("FCL::CHALLENGE::RESPONSE", data)
   }
 }
 
@@ -47,107 +45,113 @@ function chooseAccount(props, scopes) {
   }, new Set([]))
 
   return authnResponse({
-    addr: address,
-    services: [
-      {
-        f_type: "Service",
-        f_vsn: "1.0.0",
-        type: "authn",
-        uid: "fcl-dev-wallet#authn",
-        endpoint: `${location.origin}/fcl/authn`,
-        id: address,
-        identity: {
-          address: address,
-        },
-        provider: {
-          address: null,
-          name: "FCL Dev Wallet",
-          icon: null,
-          description: "For Local Development Only",
-        },
-      },
-      {
-        f_type: "Service",
-        f_vsn: "1.0.0",
-        type: "authz",
-        uid: "fcl-dev-wallet#authz",
-        endpoint: `${location.origin}/fcl/authz`,
-        method: "TAB/RPC",
-        identity: {
-          address: address,
-          keyId: Number(keyId),
-        },
-      },
-      {
-        f_type: "Service",
-        f_vsn: "1.0.0",
-        type: "user-signature",
-        uid: "fcl-dev-wallet#user-sig",
-        endpoint: `${location.origin}/fcl/user-sig`,
-        method: "IFRAME/RPC",
-        id: address,
-        data: {addr: address, keyId: Number(keyId)},
-        params: {},
-      },
-
-      !!scopes.size && {
-        f_type: "Service",
-        f_vsn: "1.0.0",
-        type: "open-id",
-        uid: "fcl-dev-wallet#open-id",
-        method: "data",
-        data: {
-          f_type: "OpenID",
+    f_type: "PollingResponse",
+    f_vsn: "1.0.0",
+    status: "APPROVED",
+    reason: null,
+    data: {
+      addr: address,
+      services: [
+        {
+          f_type: "Service",
           f_vsn: "1.0.0",
-          ...entries([
-            intersection(PROFILE_SCOPES, scopes).size && [
-              "profile",
-              entries([
-                entry(scopes, "name", `name[${address}]`),
-                entry(scopes, "family_name", `family_name[${address}]`),
-                entry(scopes, "given_name", `given_name[${address}]`),
-                entry(scopes, "middle_name", `middle_name[${address}]`),
-                entry(scopes, "nickname", `nickname[${address}]`),
-                entry(
-                  scopes,
-                  "preferred_username",
-                  `preferred_username[${address}]`
-                ),
-                entry(scopes, "profile", `https://onflow.org`),
-                entry(
-                  scopes,
-                  "piture",
-                  `https://https://avatars.onflow.org/avatar/${address}`
-                ),
-                entry(scopes, "website", "https://onflow.org"),
-                entry(scopes, "gender", `gender[${address}]`),
-                entry(
-                  scopes,
-                  "birthday",
-                  `0000-${new Date().getMonth() + 1}-${new Date().getDate()}`
-                ),
-                entry(scopes, "zoneinfo", `America/Vancouver`),
-                entry(scopes, "locale", `en`),
-                entry(scopes, "updated_at", Date.now()),
-              ]),
-            ],
-            intersection(EMAIL_SCOPES, scopes).size && [
-              "email",
-              entries([
-                entry(scopes, "email", `${address}@example.com`),
-                entry(scopes, "email_verified", true),
-              ]),
-            ],
-            // intersection(ADDRESS_SCOPES, scopes).size && [
-            //   "address",
-            //   entries([]),
-            // ],
-            // intersection(PHONE_SCOPES, scopes).size && ["phone", entries([])],
-            // intersection(SOCIAL_SCOPES, scopes).size && ["social", entries([])],
-          ]),
+          type: "authn",
+          uid: "fcl-dev-wallet#authn",
+          endpoint: `${location.origin}/fcl/authn`,
+          id: address,
+          identity: {
+            address: address,
+          },
+          provider: {
+            address: null,
+            name: "FCL Dev Wallet",
+            icon: null,
+            description: "For Local Development Only",
+          },
         },
-      },
-    ].filter(Boolean),
+        {
+          f_type: "Service",
+          f_vsn: "1.0.0",
+          type: "authz",
+          uid: "fcl-dev-wallet#authz",
+          endpoint: `${location.origin}/fcl/authz`,
+          method: "IFRAME/RPC",
+          identity: {
+            address: address,
+            keyId: Number(keyId),
+          },
+        },
+        {
+          f_type: "Service",
+          f_vsn: "1.0.0",
+          type: "user-signature",
+          uid: "fcl-dev-wallet#user-sig",
+          endpoint: `${location.origin}/fcl/user-sig`,
+          method: "IFRAME/RPC",
+          id: address,
+          data: {addr: address, keyId: Number(keyId)},
+          params: {},
+        },
+
+        !!scopes.size && {
+          f_type: "Service",
+          f_vsn: "1.0.0",
+          type: "open-id",
+          uid: "fcl-dev-wallet#open-id",
+          method: "data",
+          data: {
+            f_type: "OpenID",
+            f_vsn: "1.0.0",
+            ...entries([
+              intersection(PROFILE_SCOPES, scopes).size && [
+                "profile",
+                entries([
+                  entry(scopes, "name", `name[${address}]`),
+                  entry(scopes, "family_name", `family_name[${address}]`),
+                  entry(scopes, "given_name", `given_name[${address}]`),
+                  entry(scopes, "middle_name", `middle_name[${address}]`),
+                  entry(scopes, "nickname", `nickname[${address}]`),
+                  entry(
+                    scopes,
+                    "preferred_username",
+                    `preferred_username[${address}]`
+                  ),
+                  entry(scopes, "profile", `https://onflow.org`),
+                  entry(
+                    scopes,
+                    "piture",
+                    `https://https://avatars.onflow.org/avatar/${address}`
+                  ),
+                  entry(scopes, "website", "https://onflow.org"),
+                  entry(scopes, "gender", `gender[${address}]`),
+                  entry(
+                    scopes,
+                    "birthday",
+                    `0000-${new Date().getMonth() + 1}-${new Date().getDate()}`
+                  ),
+                  entry(scopes, "zoneinfo", `America/Vancouver`),
+                  entry(scopes, "locale", `en`),
+                  entry(scopes, "updated_at", Date.now()),
+                ]),
+              ],
+              intersection(EMAIL_SCOPES, scopes).size && [
+                "email",
+                entries([
+                  entry(scopes, "email", `${address}@example.com`),
+                  entry(scopes, "email_verified", true),
+                ]),
+              ],
+              // intersection(ADDRESS_SCOPES, scopes).size && [
+              //   "address",
+              //   entries([]),
+              // ],
+              // intersection(PHONE_SCOPES, scopes).size && ["phone", entries([])],
+              // intersection(SOCIAL_SCOPES, scopes).size && ["social", entries([])],
+            ]),
+          },
+        },
+      ].filter(Boolean),
+    },
   })
 }
 

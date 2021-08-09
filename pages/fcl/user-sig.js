@@ -13,10 +13,10 @@ export default function UserSign() {
     }
 
     const unsubscribe = WalletUtils.onMessageFromFCL(
-      "FCL:VIEW:READY:RESPONSE",
+      "FCL:FRAME:READY:RESPONSE",
       callback
     )
-    WalletUtils.sendMsgToFCL("FCL:VIEW:READY")
+    WalletUtils.sendMsgToFCL("FCL:FRAME:READY")
 
     return () => unsubscribe()
   }, [])
@@ -29,7 +29,7 @@ export default function UserSign() {
     })
       .then(d => d.json())
       .then(({addr, keyId, signature}) => {
-        WalletUtils.sendMsgToFCL("FCL:VIEW:RESPONSE", {
+        WalletUtils.sendMsgToFCL("FCL:FRAME:RESPONSE", {
           f_type: "PollingResponse",
           f_vsn: "1.0.0",
           status: "APPROVED",

@@ -13,6 +13,7 @@ export default function Authz() {
 
   useEffect(() => {
     const callback = data => {
+      if (data.jsonrpc) return
       setSignable(data.body)
     }
 
